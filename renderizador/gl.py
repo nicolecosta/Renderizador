@@ -34,55 +34,91 @@ class GL:
     @staticmethod
     def polypoint2D(point, colors):
         """Função usada para renderizar Polypoint2D."""
-        # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
-        # de pontos x, y sempre na ordem. Assim point[0] é o valor da coordenada x do
-        # primeiro ponto, point[1] o valor y do primeiro ponto. Já point[2] é a
-        # coordenada x do segundo ponto e assim por diante. Assuma a quantidade de pontos
-        # pelo tamanho da lista e assuma que sempre vira uma quantidade par de valores.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
-        # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
-        # Exemplo:
-        gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        #organizando o RGB
+        R = round(colors['emissiveColor'][0]*255,0)
+        G = round(colors['emissiveColor'][1]*255,0)
+        B = round(colors['emissiveColor'][2]*255,0)
+
+        #separando e desenhando os pontos
+        for i in range(0,len(point),2):
+            x = int(point[i])
+            y = int(point[i+1])
+            gpu.GPU.set_pixel(x, y, R, G, B)
 
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
-        # Nessa função você receberá os pontos de uma linha no parâmetro lineSegments, esses
-        # pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o valor da
-        # coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto. Já point[2] é
-        # a coordenada x do segundo ponto e assim por diante. Assuma a quantidade de pontos
-        # pelo tamanho da lista. A quantidade mínima de pontos são 2 (4 valores), porém a
-        # função pode receber mais pontos para desenhar vários segmentos. Assuma que sempre
-        # vira uma quantidade par de valores.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
-        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-        print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
-        print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
-        # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+        #organizando o RGB
+        R = round(colors['emissiveColor'][0]*255,0)
+        G = round(colors['emissiveColor'][1]*255,0)
+        B = round(colors['emissiveColor'][2]*255,0)
+
+        #separando e nomeando os pontos
+        for i in range(0,len(lineSegments),4):
+            x0 = int(lineSegments[i])
+            x1 = int(lineSegments[i+2])
+            y0 = int(lineSegments[i+1])
+            y1 = int(lineSegments[i+3])
+            dx = abs(x1-x0) #delta x
+            dy = abs(y1-y0) #delta y
+            sx = 1 if x0 < x1 else -1 #identifica a direção da linha
+            sy = 1 if y0 < y1 else -1 #identifica a direção da linha
+            erro = dx - dy
+
+        #utilizando os princípios de erro incremental de Bresenham
+        #assim o código funciona para todos os octantes
+        #referência: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#:~:text=Bresenham's%20line%20algorithm%20is%20a,straight%20line%20between%20two%20points.
+        while x0 != x1 or y0 != y1:
+            if x0>= 0 and y0>= 0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+                gpu.GPU.set_pixel(x0, y0, R, G, B)
+            e2 = 2 * erro
+            if e2 > -dy:
+                erro -= dy
+                x0 += sx
+            if e2 < dx:
+                erro += dx
+                y0 += sy
+        
+        if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+            gpu.GPU.set_pixel(x0, y0, R, G, B)
+
 
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
-        # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
-        # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
-        # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
-        # Já point[2] é a coordenada x do segundo ponto e assim por diante. Assuma que a
-        # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
-        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
-        # Exemplo:
-        gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+        #organizando o RGB
+        R = round(colors['emissiveColor'][0]*255,0)
+        G = round(colors['emissiveColor'][1]*255,0)
+        B = round(colors['emissiveColor'][2]*255,0)
+
+        #separando e nomeando os pontos
+        for i in range(0,len(vertices),6): 
+            x0 = int(vertices[i])
+            y0 = int(vertices[i+1])
+            x1 = int(vertices[i+2])
+            y1 = int(vertices[i+3])
+            x2 = int(vertices[i+4])
+            y2 = int(vertices[i+5])
+
+        #pegando o max e min para delimitar uma bounding box
+        max_x = max(x0,x1,x2)
+        max_y = max(y0,y1,y2)
+        min_x = min(x0,x1,x2)
+        min_y = min(y0,y1,y2)
+
+        #passando nos pixeis e coloring os que estão dentro dos triângulos
+        for x in range(min_x,max_x):
+            for y in range(min_y,max_y):
+                L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
+                L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
+                L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
+
+                if L1 >= 0 and L2 >= 0 and L3 >=0:
+                    gpu.GPU.set_pixel(x, y, R, G, B) 
+
 
     @staticmethod
     def triangleSet(point, colors):
