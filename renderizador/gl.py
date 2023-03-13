@@ -11,6 +11,7 @@ Disciplina: Computação Gráfica
 Data: <DATA DE INÍCIO DA IMPLEMENTAÇÃO>
 """
 
+import numpy as np
 import time         # Para operações com tempo
 import gpu          # Simula os recursos de uma GPU
 import math         # Funções matemáticas
@@ -59,7 +60,7 @@ class GL:
         B = round(colors['emissiveColor'][2]*255,0)
 
         #separando e nomeando os pontos
-        for i in range(0,len(lineSegments),4):
+        for i in range(0,len(lineSegments)-2,2):
             x0 = int(lineSegments[i])
             x1 = int(lineSegments[i+2])
             y0 = int(lineSegments[i+1])
@@ -70,23 +71,24 @@ class GL:
             sy = 1 if y0 < y1 else -1 #identifica a direção da linha
             erro = dx - dy
 
-        #utilizando os princípios de erro incremental de Bresenham
-        #assim o código funciona para todos os octantes
-        #referência: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#:~:text=Bresenham's%20line%20algorithm%20is%20a,straight%20line%20between%20two%20points.
-        while x0 != x1 or y0 != y1:
-            if x0>= 0 and y0>= 0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
-                gpu.GPU.set_pixel(x0, y0, R, G, B)
-            e2 = 2 * erro
-            if e2 > -dy:
-                erro -= dy
-                x0 += sx
-            if e2 < dx:
-                erro += dx
-                y0 += sy
-        
-        if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
-            #gpu.GPU.set_pixel(x0, y0, R, G, B)
-            gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
+            #utilizando os princípios de erro incremental de Bresenham
+            #assim o código funciona para todos os octantes
+            #referência: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#:~:text=Bresenham's%20line%20algorithm%20is%20a,straight%20line%20between%20two%20points.
+            while x0 != x1 or y0 != y1:
+                if x0>= 0 and y0>= 0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+                    #gpu.GPU.draw_pixel(x0, y0, R, G, B)
+                    gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, [R, G, B])
+                e2 = 2 * erro
+                if e2 > -dy:
+                    erro -= dy
+                    x0 += sx
+                if e2 < dx:
+                    erro += dx
+                    y0 += sy
+            
+            if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+                #gpu.GPU.set_pixel(x0, y0, R, G, B)
+                gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
 
 
     @staticmethod
@@ -117,22 +119,28 @@ class GL:
             x2 = int(vertices[i+4])
             y2 = int(vertices[i+5])
 
-        #pegando o max e min para delimitar uma bounding box
-        max_x = max(x0,x1,x2)
-        max_y = max(y0,y1,y2)
-        min_x = min(x0,x1,x2)
-        min_y = min(y0,y1,y2)
+            GL.polyline2D([x0,y0,x1,y1], colors)
+            GL.polyline2D([x1,y1,x2,y2], colors)
+            GL.polyline2D([x2,y2,x0,y0], colors)
+            
 
-        #passando nos pixeis e coloring os que estão dentro dos triângulos
-        for x in range(min_x,max_x):
-            for y in range(min_y,max_y):
-                L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
-                L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
-                L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
+            #pegando o max e min para delimitar uma bounding box
+            max_x = max(x0,x1,x2)
+            max_y = max(y0,y1,y2)
+            min_x = min(x0,x1,x2)
+            min_y = min(y0,y1,y2)
 
-                if L1 >= 0 and L2 >= 0 and L3 >=0:
-                    #gpu.GPU.set_pixel(x, y, R, G, B) 
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
+            #passando nos pixeis e coloring os que estão dentro dos triângulos
+            for x in range(min_x,max_x):
+                for y in range(min_y,max_y):
+                    L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
+                    L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
+                    L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
+
+                    if L1 >= 0 and L2 >= 0 and L3 >=0:
+                        #gpu.GPU.set_pixel(x, y, R, G, B) 
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
+
 
 
     @staticmethod
@@ -164,6 +172,85 @@ class GL:
         # Na função de viewpoint você receberá a posição, orientação e campo de visão da
         # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
+
+
+
+        #look at
+        ux = orientation[0]
+        uy = orientation[1]
+        uz = orientation[2]
+        ang = orientation[3]
+        q = np.array([ux*np.sin((ang)/2),uy*np.sin((ang)/2),uz*np.sin((ang)/2),np.cos((ang)/2)])
+        q = q/np.linalg.norm(q)
+        qi = q[0]
+        qj = q[1]
+        qk = q[2]
+        qr = q[3]
+        r11 = 1.0-2.0*(qj**2+qk**2)
+        r12 = 2.0*(qi*qj-qk*qr)
+        r13 = 2.0*(qi*qk+qj*qr)
+        r14 = 0.0
+        r21 = 2.0*(qi*qj+qk*qr)
+        r22 = 1.0-2.0*(qi**2+qk**2)
+        r23 = 2.0*(qj*qk-qi*qr)
+        r24 = 0.0
+        r31 = 2.0*(qi*qk-qj*qr)
+        r32 = 2.0*(qj*qk+qi*qr)
+        r33 = 1.0-2.0*(qi**2+qj**2)
+        r34 = 0.0
+        r41 = 0.0
+        r42 = 0.0
+        r43 = 0.0
+        r44 =1.0
+
+
+        R = np.array([[r11, r12, r13, r14],
+                      [r21, r22, r23, r24],
+                      [r31, r32, r33, r34],
+                      [r41, r42, r43, r44]])
+        
+        T_id = np.array([[1.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0],
+                        [0.0, 0.0, 1.0],
+                        position])
+        
+        hom = [0.0, 0.0, 0.0, 1.0]
+
+        T = np.append(T_id.transpose(),np.array(([hom])),axis=0)
+
+
+        lookat = np.linalg.inv(np.matmul(T,R))
+        print("Lookat: {0}".format(lookat))  
+
+
+        #perspective
+        width = GL.width 
+        height = GL.height 
+        near = GL.near 
+        far = GL.far 
+        fovy = 2.0*np.arctan(np.tan(fieldOfView/2.0)*height/np.sqrt(height**2+width**2)) #em radiano
+        top = near * np.tan(fovy)
+        right = top*(width/height)
+
+        P = np.array([[near/right, 0, 0, 0],
+                      [0, near/top, 0, 0],
+                      [0, 0, -((far+near)/(far-near)), (-2*far*near)/(far-near)],
+                      [0, 0, -1, 0]])
+        print("Perspective: {0}".format(P))  
+        
+
+        #screen
+        S = np.array([[width/2, 0, 0, width/2],
+                [0, -(height/2), 0, height/2],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]])
+        print("Screen: {0}".format(S))  
+
+
+        #view = screen x perspective x look at
+        V = np.matmul(P,lookat)
+        V = np.matmul(S,V)
+        print("Viewpoint Matrix: {0}".format(V))           
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Viewpoint : ", end='')
