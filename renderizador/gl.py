@@ -45,10 +45,15 @@ class GL:
         for i in range(0,len(point),2):
             x = int(point[i])
             y = int(point[i+1])
+<<<<<<< HEAD
             #gpu.GPU.set_pixel(x, y, R, G, B)
             gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
         
+=======
+            gpu.GPU.set_pixel(x, y, R, G, B)
+
+>>>>>>> 9f8ed33dcf0005cb9594b7ee2d38ce0fd1511b3e
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
@@ -59,7 +64,11 @@ class GL:
         B = round(colors['emissiveColor'][2]*255,0)
 
         #separando e nomeando os pontos
+<<<<<<< HEAD
         for i in range(0,len(lineSegments)-2,2):
+=======
+        for i in range(0,len(lineSegments),4):
+>>>>>>> 9f8ed33dcf0005cb9594b7ee2d38ce0fd1511b3e
             x0 = int(lineSegments[i])
             x1 = int(lineSegments[i+2])
             y0 = int(lineSegments[i+1])
@@ -70,6 +79,7 @@ class GL:
             sy = 1 if y0 < y1 else -1 #identifica a direção da linha
             erro = dx - dy
 
+<<<<<<< HEAD
             #utilizando os princípios de erro incremental de Bresenham
             #assim o código funciona para todos os octantes
             #referência: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#:~:text=Bresenham's%20line%20algorithm%20is%20a,straight%20line%20between%20two%20points.
@@ -88,11 +98,30 @@ class GL:
             if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
                 #gpu.GPU.set_pixel(x0, y0, R, G, B)
                 gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
+=======
+        #utilizando os princípios de erro incremental de Bresenham
+        #assim o código funciona para todos os octantes
+        #referência: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#:~:text=Bresenham's%20line%20algorithm%20is%20a,straight%20line%20between%20two%20points.
+        while x0 != x1 or y0 != y1:
+            if x0>= 0 and y0>= 0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+                gpu.GPU.set_pixel(x0, y0, R, G, B)
+            e2 = 2 * erro
+            if e2 > -dy:
+                erro -= dy
+                x0 += sx
+            if e2 < dx:
+                erro += dx
+                y0 += sy
+        
+        if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height: #limitar linhas dentro do FrameBuffer
+            gpu.GPU.set_pixel(x0, y0, R, G, B)
+>>>>>>> 9f8ed33dcf0005cb9594b7ee2d38ce0fd1511b3e
 
 
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
+<<<<<<< HEAD
         # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
         # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
         # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
@@ -103,6 +132,8 @@ class GL:
         print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
+=======
+>>>>>>> 9f8ed33dcf0005cb9594b7ee2d38ce0fd1511b3e
 
         #organizando o RGB
         R = round(colors['emissiveColor'][0]*255,0)
@@ -118,6 +149,7 @@ class GL:
             x2 = int(vertices[i+4])
             y2 = int(vertices[i+5])
 
+<<<<<<< HEAD
             GL.polyline2D([x0,y0,x1,y1], colors)
             GL.polyline2D([x1,y1,x2,y2], colors)
             GL.polyline2D([x2,y2,x0,y0], colors)
@@ -140,6 +172,23 @@ class GL:
                         #gpu.GPU.set_pixel(x, y, R, G, B) 
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
 
+=======
+        #pegando o max e min para delimitar uma bounding box
+        max_x = max(x0,x1,x2)
+        max_y = max(y0,y1,y2)
+        min_x = min(x0,x1,x2)
+        min_y = min(y0,y1,y2)
+
+        #passando nos pixeis e coloring os que estão dentro dos triângulos
+        for x in range(min_x,max_x):
+            for y in range(min_y,max_y):
+                L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
+                L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
+                L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
+
+                if L1 >= 0 and L2 >= 0 and L3 >=0:
+                    gpu.GPU.set_pixel(x, y, R, G, B) 
+>>>>>>> 9f8ed33dcf0005cb9594b7ee2d38ce0fd1511b3e
 
 
     @staticmethod
