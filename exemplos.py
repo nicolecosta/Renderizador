@@ -89,8 +89,13 @@ else:
         sys.exit("Opção inválida!")
 
 # Roda renderizador com os parâmetros necessário para o exemplo escolhido
+<<<<<<< HEAD
 interpreter = sys.executable
 print('Abrindo arquivo: "{0}"'.format(opcoes[2]))
 print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcoes[1:]), "\n")
 
 subprocess.call([interpreter, "renderizador/renderizador.py"] + opcoes[1:])
+=======
+print("Abrindo arquivo: {0}".format(opcoes[2]))
+subprocess.call(["python", "renderizador/renderizador.py"] + opcoes[1:])
+>>>>>>> 9f8ed33 (projeto 1)

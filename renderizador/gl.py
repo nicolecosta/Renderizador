@@ -159,12 +159,42 @@ class GL:
         # (emissiveColor), conforme implementar novos materias você deverá suportar outros
         # tipos de cores.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        #separando e nomeando os pontos
+        for i in range(0,len(point),9): 
+            x0 = int(point[i])
+            y0 = int(point[i+1])
+            z0 = int(point[i+2])
+            x1 = int(point[i+3])
+            y1 = int(point[i+4])
+            z1 = int(point[i+5])
+            x2 = int(point[i+6])
+            y2 = int(point[i+7])
+            z2 = int(point[i+8])
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
+            M = np.array([[x0, x1, x2],
+                          [y0, y1, y2],
+                          [z0, z1, z2],
+                          [1, 1, 1]])
+            
+            M_T = np.matmul(GL.model, M)
+            M_T_V = np.matmul(GL.V, M_T)
+
+            # print("MxT= {0}".format(M_T))
+            print("MxTxV= {0}".format(M_T_V))
+
+            last_row = M_T_V[-1]
+            M_T_V_hom = M_T_V/last_row
+            print("HOM= {0}".format(M_T_V_hom))
+            
+            points = []
+            for i in range(3):
+                points.append(M_T_V_hom[0][i])
+                points.append(M_T_V_hom[1][i])
+
+            print("points{0}".format(points))
+            GL.triangleSet2D(points,colors)
+
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -232,18 +262,18 @@ class GL:
         top = near * np.tan(fovy)
         right = top*(width/height)
 
-        P = np.array([[near/right, 0, 0, 0],
-                      [0, near/top, 0, 0],
-                      [0, 0, -((far+near)/(far-near)), (-2*far*near)/(far-near)],
-                      [0, 0, -1, 0]])
+        P = np.array([[near/right, 0.0, 0.0, 0.0],
+                      [0.0, near/top, 0.0, 0.0],
+                      [0.0, 0.0, -((far+near)/(far-near)), (-2*far*near)/(far-near)],
+                      [0.0, 0.0, -1.0, 0.0]])
         print("Perspective: {0}".format(P))  
         
 
         #screen
-        S = np.array([[width/2, 0, 0, width/2],
-                [0, -(height/2), 0, height/2],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1]])
+        S = np.array([[width/2, 0.0, 0.0, width/2],
+                [0.0, -(height/2), 0.0, height/2],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0]])
         print("Screen: {0}".format(S))  
 
 
@@ -269,15 +299,52 @@ class GL:
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Transform : ", end='')
-        if translation:
-            print("translation = {0} ".format(translation), end='') # imprime no terminal
-        if scale:
-            print("scale = {0} ".format(scale), end='') # imprime no terminal
-        if rotation:
-            print("rotation = {0} ".format(rotation), end='') # imprime no terminal
-        print("")
+        translation_matrix = np.array([[1.0, 0.0, 0.0, translation[0]],
+                                     [0.0, 1.0, 0.0, translation[1]],
+                                     [0.0, 0.0, 1.0, translation[2]],
+                                     [0.0, 0.0, 0.0, 1.0]])
+        
+        scale_matrix =np.array([[scale[0], 0.0, 0.0, 0.0],
+                                [0.0, scale[1], 0.0, 0.0],
+                                [0.0, 0.0, scale[2], 0.0],
+                                [0.0, 0.0, 0.0, 1.0]])
+
+        ux = rotation[0]
+        uy = rotation[1]
+        uz = rotation[2]
+        ang = rotation[3]
+        q = np.array([ux*np.sin((ang)/2),uy*np.sin((ang)/2),uz*np.sin((ang)/2),np.cos((ang)/2)])
+        q = q/np.linalg.norm(q)
+        qi = q[0]
+        qj = q[1]
+        qk = q[2]
+        qr = q[3]
+        r11 = 1.0-2.0*(qj**2+qk**2)
+        r12 = 2.0*(qi*qj-qk*qr)
+        r13 = 2.0*(qi*qk+qj*qr)
+        r14 = 0.0
+        r21 = 2.0*(qi*qj+qk*qr)
+        r22 = 1.0-2.0*(qi**2+qk**2)
+        r23 = 2.0*(qj*qk-qi*qr)
+        r24 = 0.0
+        r31 = 2.0*(qi*qk-qj*qr)
+        r32 = 2.0*(qj*qk+qi*qr)
+        r33 = 1.0-2.0*(qi**2+qj**2)
+        r34 = 0.0
+        r41 = 0.0
+        r42 = 0.0
+        r43 = 0.0
+        r44 =1.0
+
+
+        rotation_matrix = np.array([[r11, r12, r13, r14],
+                      [r21, r22, r23, r24],
+                      [r31, r32, r33, r34],
+                      [r41, r42, r43, r44]])
+        
+        GL.model = np.matmul(rotation_matrix,scale_matrix)
+        GL.model = np.matmul(translation_matrix,GL.model)
+        #print("Model = {0} ".format(GL.model))
 
     @staticmethod
     def transform_out():
