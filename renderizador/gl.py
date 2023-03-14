@@ -139,7 +139,7 @@ class GL:
 
                     if L1 >= 0 and L2 >= 0 and L3 >=0:
                         #gpu.GPU.set_pixel(x, y, R, G, B) 
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [1, 1, 1])  # altera pixel (u, v, tipo, r, g, b)
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R,G,B])  # altera pixel (u, v, tipo, r, g, b)
 
 
 
