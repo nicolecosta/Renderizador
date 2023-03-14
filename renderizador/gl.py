@@ -139,7 +139,7 @@ class GL:
 
                     if L1 >= 0 and L2 >= 0 and L3 >=0:
                         #gpu.GPU.set_pixel(x, y, R, G, B) 
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R, G, B])  # altera pixel (u, v, tipo, r, g, b)
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [1, 1, 1])  # altera pixel (u, v, tipo, r, g, b)
 
 
 
@@ -250,7 +250,7 @@ class GL:
 
 
         lookat = np.linalg.inv(np.matmul(T,R))
-        print("Lookat: {0}".format(lookat))  
+        #print("Lookat: {0}".format(lookat))  
 
 
         #perspective
@@ -278,26 +278,19 @@ class GL:
 
 
         #view = screen x perspective x look at
-        V = np.matmul(P,lookat)
-        V = np.matmul(S,V)
-        print("Viewpoint Matrix: {0}".format(V))           
+        GL.V = np.matmul(P,lookat)
+        GL.V = np.matmul(S,GL.V)
+        #print("Viewpoint Matrix: {0}".format(GL.V))           
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end='')
-        print("position = {0} ".format(position), end='')
-        print("orientation = {0} ".format(orientation), end='')
-        print("fieldOfView = {0} ".format(fieldOfView))
+        # # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # print("Viewpoint : ", end='')
+        # print("position = {0} ".format(position), end='')
+        # print("orientation = {0} ".format(orientation), end='')
+        # print("fieldOfView = {0} ".format(fieldOfView))
 
     @staticmethod
     def transform_in(translation, scale, rotation):
         """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # A função transform_in será chamada quando se entrar em um nó X3D do tipo Transform
-        # do grafo de cena. Os valores passados são a escala em um vetor [x, y, z]
-        # indicando a escala em cada direção, a translação [x, y, z] nas respectivas
-        # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
-        # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
-        # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
-        # modelos do mundo em alguma estrutura de pilha.
 
         translation_matrix = np.array([[1.0, 0.0, 0.0, translation[0]],
                                      [0.0, 1.0, 0.0, translation[1]],
