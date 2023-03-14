@@ -131,15 +131,18 @@ class GL:
             min_y = min(y0,y1,y2)
 
             #passando nos pixeis e coloring os que estão dentro dos triângulos
-            for x in range(min_x,max_x):
-                for y in range(min_y,max_y):
+            # for x in range(min_x,max_x):
+            #     for y in range(min_y,max_y):
+            for x in range(GL.width):
+                for y in range(GL.height):
                     L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
                     L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
                     L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
 
                     if L1 >= 0 and L2 >= 0 and L3 >=0:
                         #gpu.GPU.set_pixel(x, y, R, G, B) 
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R,G,B])  # altera pixel (u, v, tipo, r, g, b)
+                        if x0>=0 and y0>=0 and x0<GL.width and y0<GL.height:
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R,G,B])  # altera pixel (u, v, tipo, r, g, b)
 
 
 
@@ -161,21 +164,24 @@ class GL:
 
         #separando e nomeando os pontos
         for i in range(0,len(point),9): 
-            x0 = int(point[i])
-            y0 = int(point[i+1])
-            z0 = int(point[i+2])
-            x1 = int(point[i+3])
-            y1 = int(point[i+4])
-            z1 = int(point[i+5])
-            x2 = int(point[i+6])
-            y2 = int(point[i+7])
-            z2 = int(point[i+8])
+            x0 = (point[i])
+            y0 = (point[i+1])
+            z0 = (point[i+2])
+            x1 = (point[i+3])
+            y1 = (point[i+4])
+            z1 = (point[i+5])
+            x2 = (point[i+6])
+            y2 = (point[i+7])
+            z2 = (point[i+8])
 
 
             M = np.array([[x0, x1, x2],
                           [y0, y1, y2],
                           [z0, z1, z2],
-                          [1, 1, 1]])
+                          [1.0, 1.0, 1.0]])
+            print("M= {0}".format(M))
+            
+    
             
             M_T = np.matmul(GL.model, M)
             M_T_V = np.matmul(GL.V, M_T)
@@ -280,7 +286,7 @@ class GL:
         #view = screen x perspective x look at
         GL.V = np.matmul(P,lookat)
         GL.V = np.matmul(S,GL.V)
-        #print("Viewpoint Matrix: {0}".format(GL.V))           
+        print("Viewpoint Matrix: {0}".format(GL.V))           
 
         # # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         # print("Viewpoint : ", end='')
@@ -337,7 +343,7 @@ class GL:
         
         GL.model = np.matmul(rotation_matrix,scale_matrix)
         GL.model = np.matmul(translation_matrix,GL.model)
-        #print("Model = {0} ".format(GL.model))
+        print("Model = {0} ".format(GL.model))
 
     @staticmethod
     def transform_out():
