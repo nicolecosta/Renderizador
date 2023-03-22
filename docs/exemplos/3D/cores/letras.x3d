@@ -3,7 +3,7 @@
 	<Scene>
 	    <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
 		<Viewpoint position="0.15 -0.1 0.3"/>
-		<Background groundColor="0.051 0.051 0.051" skyColor="0.051 0.051 0.051"/>
+		
 		<Transform>
 			<Shape>
 				<Appearance>
@@ -15,7 +15,7 @@
 				</IndexedFaceSet>
 			</Shape>
 		</Transform>
-		<Transform>
+		<!-- <Transform>
 			<Shape>
 				<Appearance>
 					<Material emissiveColor="1 1 1"/>
@@ -65,6 +65,6 @@
 								/>
 				</IndexedFaceSet>
 			</Shape>
-		</Transform>
+		</Transform> -->
 	</Scene>
 </X3D>

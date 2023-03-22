@@ -395,6 +395,7 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
+
         i = 2
         clockwise = False
 
@@ -456,7 +457,8 @@ class GL:
 
 
         clockwise = False
-
+        # i =0 
+        # while coordIndex[i] != -1:
         for i in range(0, len(coordIndex), 4):
             if not clockwise:
                 points = [coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
@@ -468,9 +470,11 @@ class GL:
                           coord[coordIndex[i+1]*3], coord[coordIndex[i+1]*3+1], coord[coordIndex[i+1]*3+2]] 
                 
             clockwise = not clockwise
+            # print('corddddd', coord)
+            # print('coordIndex',coordIndex)
+            # print('pointssss',points)
             GL.triangleSet(points, colors)
 
-            i += 1
 
 
     @staticmethod
