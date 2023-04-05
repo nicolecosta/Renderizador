@@ -147,7 +147,7 @@ class GL:
     def triangleSet(point, colors):
         """Função usada para renderizar TriangleSet."""
 
-        GL.draw_triangle(point,colors, transparecy = True)
+        GL.draw_triangle(point,colors, transparency = True)
 
         # #separando e nomeando os pontos
         # for i in range(0,len(point),9): 
@@ -299,23 +299,23 @@ class GL:
         uy = rotation[1]
         uz = rotation[2]
         ang = rotation[3]
-        q = np.array([ux*np.sin((ang)/2),uy*np.sin((ang)/2),uz*np.sin((ang)/2),np.cos((ang)/2)])
+        q = np.array([ux*np.sin((ang)/2.0),uy*np.sin((ang)/2.0),uz*np.sin((ang)/2.0),np.cos((ang)/2.0)])
         q = q/np.linalg.norm(q)
         qi = q[0]
         qj = q[1]
         qk = q[2]
         qr = q[3]
-        r11 = 1.0-2.0*(qj**2+qk**2)
+        r11 = 1.0-2.0*(qj**2.0+qk**2.0)
         r12 = 2.0*(qi*qj-qk*qr)
         r13 = 2.0*(qi*qk+qj*qr)
         r14 = 0.0
         r21 = 2.0*(qi*qj+qk*qr)
-        r22 = 1.0-2.0*(qi**2+qk**2)
+        r22 = 1.0-2.0*(qi**2.0+qk**2.0)
         r23 = 2.0*(qj*qk-qi*qr)
         r24 = 0.0
         r31 = 2.0*(qi*qk-qj*qr)
         r32 = 2.0*(qj*qk+qi*qr)
-        r33 = 1.0-2.0*(qi**2+qj**2)
+        r33 = 1.0-2.0*(qi**2.0+qj**2.0)
         r34 = 0.0
         r41 = 0.0
         r42 = 0.0
@@ -358,7 +358,7 @@ class GL:
                 vertices = point[vertice:index1] + point[index2:index3] + point[index1:index2]
 
 
-            GL.triangleSet(vertices, colors)
+            GL.draw_triangle(vertices, colors)
 
 
 
@@ -381,19 +381,22 @@ class GL:
         i = 2
         clockwise = False
 
-        while index[i] != -1:
-            if not clockwise:
-                points = [point[index[i-2]*3], point[index[i-2]*3+1], point[index[i-2]*3+2],
-                          point[index[i-1]*3], point[index[i-1]*3+1], point[index[i-1]*3+2],
-                          point[index[i]*3], point[index[i]*3+1], point[index[i]*3+2]] 
-            else:
-                points = [point[index[i-2]*3], point[index[i-2]*3+1], point[index[i-2]*3+2],
-                          point[index[i]*3], point[index[i]*3+1], point[index[i]*3+2],
-                          point[index[i-1]*3], point[index[i-1]*3+1], point[index[i-1]*3+2]] 
-                
-            clockwise = not clockwise
-            i += 1
-            GL.triangleSet(points, colors)
+        while i< len(index):
+            while index[i] != -1:
+                if not clockwise:
+                    points = [point[index[i-2]*3], point[index[i-2]*3+1], point[index[i-2]*3+2],
+                            point[index[i-1]*3], point[index[i-1]*3+1], point[index[i-1]*3+2],
+                            point[index[i]*3], point[index[i]*3+1], point[index[i]*3+2]] 
+                else:
+                    points = [point[index[i-2]*3], point[index[i-2]*3+1], point[index[i-2]*3+2],
+                            point[index[i]*3], point[index[i]*3+1], point[index[i]*3+2],
+                            point[index[i-1]*3], point[index[i-1]*3+1], point[index[i-1]*3+2]] 
+                    
+                clockwise = not clockwise
+                i += 1
+                GL.draw_triangle(points, colors)
+            i += 3
+        
 
 
 
@@ -419,40 +422,72 @@ class GL:
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
                        texCoord, texCoordIndex, colors, current_texture):
         """Função usada para renderizar IndexedFaceSet."""
-        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
-        # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
-        # Você receberá as coordenadas dos pontos no parâmetro cord, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim coord[0] é o valor
-        # da coordenada x do primeiro ponto, coord[1] o valor y do primeiro ponto, coord[2]
-        # o valor z da coordenada z do primeiro ponto. Já coord[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedFaceSet uma lista de vértices é informada
-        # em coordIndex, o valor -1 indica que a lista acabou.
-        # A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante.
-        # Adicionalmente essa implementação do IndexedFace aceita cores por vértices, assim
-        # se a flag colorPerVertex estiver habilitada, os vértices também possuirão cores
-        # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
-        # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
-        # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
-        # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
-        # implementadado um método para a leitura de imagens.
 
+        i = 2
         clockwise = False
-        i =2 
-        while coordIndex[i] != -1:
-            if not clockwise:
-                points = [coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
-                          coord[coordIndex[i+1]*3], coord[coordIndex[i+1]*3+1], coord[coordIndex[i+1]*3+2],
-                          coord[coordIndex[i+2]*3], coord[coordIndex[i+2]*3+1], coord[coordIndex[i+2]*3+2]] 
-            else:
-                points = [coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
-                          coord[coordIndex[i+2]*3], coord[coordIndex[i+2]*3+1], coord[coordIndex[i+2]*3+2],
-                          coord[coordIndex[i+1]*3], coord[coordIndex[i+1]*3+1], coord[coordIndex[i+1]*3+2]]
-                
-            clockwise = not clockwise
-            i += 1
-            GL.triangleSet(points, colors)
+
+        # print(coord)
+        # print(coordIndex)
+
+        while i < len(coordIndex):
+            # p0
+            idx_i = i-2
+            while coordIndex[i] != -1:
+                if not clockwise:
+                    # Pontos definidos para cada vértice do triângulo
+                    points = [coord[coordIndex[idx_i]*3], coord[coordIndex[idx_i]*3+1], coord[coordIndex[idx_i]*3+2],
+                              coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2],
+                              coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2]]
+                    if colorPerVertex and color is not None:
+                        # Cores definidos para cada vértice do triângulo
+                        colorsVert = np.asarray([[color[colorIndex[idx_i]*3], color[colorIndex[i-1]*3], color[colorIndex[i]*3]],
+                                                [color[colorIndex[idx_i]*3+1], color[colorIndex[i-1]*3+1], color[colorIndex[i]*3+1]],
+                                                [color[colorIndex[idx_i]*3+2], color[colorIndex[i-1]*3+2], color[colorIndex[i]*3+2]]] )
+                else:
+                    # Pontos definidos para cada vértice do triângulo
+                    points = [coord[coordIndex[idx_i]*3], coord[coordIndex[idx_i]*3+1], coord[coordIndex[idx_i]*3+2],
+                              coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
+                              coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2]] 
+                    if colorPerVertex and color is not None:
+                        # Cores definidos para cada vértice do triângulo
+                        colorsVert = np.asarray([[color[colorIndex[idx_i]*3], color[colorIndex[i]*3], color[colorIndex[i-1]*3]],
+                                                [color[colorIndex[idx_i]*3+1], color[colorIndex[i]*3+1], color[colorIndex[i-1]*3+1]],
+                                                [color[colorIndex[idx_i]*3+2], color[colorIndex[i]*3+2], color[colorIndex[i-1]*3+2]]])
+                        
+                # Inverte sentido de conexão
+                clockwise = not clockwise
+
+               
+                if colorPerVertex and color is not None:
+                    # Desenha triângulo com especificação para interpolação
+                    print(color)
+                    GL.draw_triangle(points, colors, color=colorsVert)
+                else:
+                    # Desenha triângulo sem especificação para interpolação
+                    GL.draw_triangle(points, colors)
+
+                # Avança para próximo vértice a ser conectado
+                i += 1
+            # Chegou a -1, pula 3 pontos e faz o index a partir daí
+            i += 3
+
+        # clockwise = False
+        # i = 2
+        # while i< len(coordIndex):
+        #     while coordIndex[i] != -1:
+        #         if not clockwise:
+        #             points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+        #                     coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2],
+        #                     coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2]] 
+        #         else:
+        #             points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+        #                     coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
+        #                     coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2]]
+                    
+        #         clockwise = not clockwise
+        #         GL.draw_triangle(points, colors)
+        #         i += 1
+        #     i+=3
 
 
     @staticmethod
@@ -602,43 +637,64 @@ class GL:
         """Para no futuro implementar um fragment shader."""
 
 
-
     @staticmethod
-    def calc_bary(A, B, C, P):
-        v0 = B - A
-        v1 = C - A
-        v2 = P - A
+    def calc_bary(x, y, points):
+        if len(points) % 6 == 0:
+            x0 = round(points[0])
+            y0 = round(points[1])
+            x1 = round(points[2])
+            y1 = round(points[3])
+            x2 = round(points[4])
+            y2 = round(points[5])
 
-        # Compute dot products
-        dot00 = np.dot(v0, v0)
-        dot01 = np.dot(v0, v1)
-        dot02 = np.dot(v0, v2)
-        dot11 = np.dot(v1, v1)
-        dot12 = np.dot(v1, v2)
+        elif len(points) % 9 == 0:
+            x0 = round(points[0])
+            y0 = round(points[1])
+            x1 = round(points[3])
+            y1 = round(points[4])
+            x2 = round(points[6])
+            y2 = round(points[7])
 
-        # Compute barycentric coordinates
-        denom = dot00 * dot11 - dot01 * dot01
-        u = (dot11 * dot02 - dot01 * dot12) / denom
-        v = (dot00 * dot12 - dot01 * dot02) / denom
-        w = 1 - u - v
+        def line_eq(x, y, x0, y0, x1, y1):
+            return (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
 
-        return u, v, w
+        # alpha = L_BC(x, y)/L_BC(xA, yA)
+        alpha = line_eq(x, y, x1, y1, x2, y2)/line_eq(x0, y0, x1, y1, x2, y2)
+
+        # beta = L_CA(x, y)/L_CA(xb, yb)
+        beta = line_eq(x, y, x2, y2, x0, y0)/line_eq(x1, y1, x2, y2, x0, y0)
+
+
+        # gama = 1 - alpha - beta
+        gamma = 1 - alpha - beta
+
+        # C = alpha*A + beta*B + gama*C
+        return alpha, beta, gamma
+    
+
     
     @staticmethod
-    def is_inside(x, y, points):
-        for i in range(0,len(points),6): 
-            x0 = int(points[i])
-            y0 = int(points[i+1])
-            x1 = int(points[i+2])
-            y1 = int(points[i+3])
-            x2 = int(points[i+4])
-            y2 = int(points[i+5])
+    def is_inside(x, y, points): 
+        if len(points) % 6 == 0:
+            x0 = int(points[0])
+            y0 = int(points[1])
+            x1 = int(points[2])
+            y1 = int(points[3])
+            x2 = int(points[4])
+            y2 = int(points[5])
+        elif len(points) % 9 == 0:
+            x0 = int(points[0])
+            y0 = int(points[1])
+            x1 = int(points[3])
+            y1 = int(points[4])
+            x2 = int(points[6])
+            y2 = int(points[7])
 
         L1 = (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
         L2 = (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
         L3 = (y0-y2)*x - (x0-x2)*y + y2*(x0-x2) - x2*(y0-y2)
 
-        if L1 >= 0 and L2 >= 0 and L3 >=0:
+        if (L1 >= 0 and L2 >= 0 and L3 >=0) or (L1 <= 0 and L2 <= 0 and L3 <=0):
             return True
         else: 
             return False
@@ -647,90 +703,83 @@ class GL:
     
     @staticmethod
     def antialiasing(x, y, points):
-        samplingrate = 4
+        samplingrate = 2
         xs = int(x*samplingrate)
-        ys = int(ys*samplingrate)
+        ys = int(y*samplingrate)
 
-        _ss = 0
+        ss = 0
 
-        sampled_points = [element * samplingrate for element in points]
+        sampled_points = [int(element * samplingrate) for element in points]
 
         if GL.is_inside(xs, ys, sampled_points):
-            _ss += 1
+            ss += 1
 
         if GL.is_inside(xs+1, ys, sampled_points):
-            _ss += 1
+            ss += 1
 
         if GL.is_inside(xs, ys+1, sampled_points):
-            _ss += 1
+            ss += 1
 
         if GL.is_inside(xs+1, ys+1, sampled_points):
-            _ss += 1
+            ss += 1
 
-        _ss /= 16
+        ss /= 4
 
-        return _ss
+        return ss
 
     @staticmethod
     def new_draw_pixel(x,y,points,color,colors,ss=1):
-        frame = 0 < x < GL.width and 0 < y < GL.height
-        # Separate into A, B, and C coordinate lists
-        A = points[0], points[1]
-        B = points[2], points[3]
-        C = points[4], points[5]
-
+        frame = (0 < x < GL.width) and (0 < y < GL.height)
+        #print(color)
         points_len = len(points)
         if points_len % 6 == 0:
             dim = '2D'
         elif points_len % 9 == 0:
             dim = '3D'
 
-        og_color = gpu.GPU.read_pixel([x,y], gpu.GPU.RGB8)*colors['transparency']
+        u, v, w = GL.calc_bary(x, y, points)
 
         if frame == True:
-            if color != None and dim == '2D':
-                u, v, w = GL.calc_bary(A,B,C)
-                
+            og_color = gpu.GPU.read_pixel([x,y], gpu.GPU.RGB8)*colors['transparency']
+            if color is not None and dim == '2D':
                 # Cor interpolada
                 R, G, B = u*color[:, 0] + v*color[:, 1] + w*color[:, 2]
                 R -= R * colors['transparency']
-                G -= G* colors['transparency']
+                G -= G * colors['transparency']
                 B -= B * colors['transparency']
                 new_color = [R, G, B]
 
                 # Combinando as cores
                 R, G, B = og_color + new_color
 
-                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R*255, G*255, B*255])
+                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R*255.0, G*255.0, B*255.0])
             
-            elif color == None and dim == '2D':
+            elif color is None and dim == '2D':
                 # New Color
-                R -= colors['emissiveColor'][0] * colors['transparency']
-                G -= colors['emissiveColor'][1] * colors['transparency']
-                B -= colors['emissiveColor'][2] * colors['transparency']
+                R = colors['emissiveColor'][0]*(1-colors['transparency'])
+                G = colors['emissiveColor'][1]*(1-colors['transparency'])
+                B = colors['emissiveColor'][2]*(1-colors['transparency'])
                 new_color = [R, G, B]
 
                 R, G, B = og_color + new_color
 
-                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R*255*ss, G*255*ss, B*255*ss]) 
+                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R*255.0*ss, G*255.0*ss, B*255.0*ss]) 
 
-            elif color != None and dim == '3D':
+            elif color is not None and dim == '3D':
                 Z = 1/(u/points[2] + v/points[5] + w/points[8])
-
                 if(Z < gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)):
-
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
 
                     # Cor interpolada (levando em conta deformação da perspectiva)
-                    r, g, b = Z*(u*color[:, 0]/points[2] + v*color[:, 1]/points[5] + w*color[:, 2]/points[8])
-                    r *= (1-colors['transparency'])*255
-                    g *= (1-colors['transparency'])*255
-                    b *= (1-colors['transparency'])*255
+                    R, G, B = Z*(u*color[:, 0]/points[2] + v*color[:, 1]/points[5] + w*color[:, 2]/points[8])
+                    R *= (1-colors['transparency'])*255.0
+                    G *= (1-colors['transparency'])*255.0
+                    B *= (1-colors['transparency'])*255.0
 
                     # Seta que as cores estejam no intervalo entre 0 e 255
-                    R = max(min(r, 255.0), 0.0)
-                    G = max(min(g, 255.0), 0.0)
-                    B = max(min(b, 255.0), 0.0)
+                    R = max(min(R, 255.0), 0.0)
+                    G = max(min(G, 255.0), 0.0)
+                    B = max(min(B, 255.0), 0.0)
 
                     new_color = [R, G, B]
 
@@ -742,9 +791,8 @@ class GL:
             else:
                 Z = 1/(u/points[2] + v/points[5] + w/points[8])
                 if(Z < gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)):
-
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
-
+                    print('desenhapix3d sem color')
                     # New Color
                     R = colors['emissiveColor'][0]*(1-colors['transparency'])*255.0
                     G = colors['emissiveColor'][1]*(1-colors['transparency'])*255.0
@@ -758,7 +806,7 @@ class GL:
                     gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8, [R,G,B])
 
 
-     @staticmethod
+    @staticmethod
     def draw_triangle(points, colors, color=None, transparency=False):
         points_len = len(points)
         if points_len % 6 == 0:
@@ -766,12 +814,12 @@ class GL:
             num_coord = 6
         elif points_len % 9 == 0:
             dim = '3D'
-            num_coord = 6
+            num_coord = 9
 
         # Pega o total de triângulos e os separa em uma matriz de triângulos
         total_triangles = int(points_len/num_coord)
-        total_triangles = total_triangles if total_triangles != 0 else 1
-        triangles = np.array_split(points, total_triangles)
+        num_triangles = total_triangles if total_triangles != 0 else 1
+        triangles = np.array_split(points, num_triangles)
 
         for i in range(total_triangles):
             vertices = triangles[i]
@@ -791,9 +839,9 @@ class GL:
 
                 # Montando matriz de coordenadas
                 M = np.array([[x0, x1, x2],
-                                        [x0, y1, y2],
-                                        [z0, z1, z2],
-                                        [1.0, 1.0, 1.0]])
+                            [y0, y1, y2],
+                            [z0, z1, z2],
+                            [1.0, 1.0, 1.0]])
 
         
                 # Multiplicando por matriz de transform            
@@ -805,8 +853,11 @@ class GL:
                 # Multiplicando por matriz de view
                 M_T_V = np.matmul(GL.V, M_T)
 
-                last_row = M_T_V[-1]
-                M_T_V_hom = M_T_V/last_row
+                last_row_MTV = M_T_V[-1]
+                M_T_V_hom = M_T_V/last_row_MTV
+                last_row_Z = temp_Z[-1]
+                tempZ_hom = temp_Z/last_row_Z
+
                 
                 points = []
                 z_coord = []
@@ -814,8 +865,8 @@ class GL:
                 for i in range(3):
                     points.append(M_T_V_hom[0][i])
                     points.append(M_T_V_hom[1][i])
-                    z_NDC.append(M_T_V[2][i])
-                    z_coord.append(temp_Z[2][i])
+                    z_NDC.append(M_T_V_hom[2][i])
+                    z_coord.append(tempZ_hom[2][i])
                     
 
             else:
@@ -833,7 +884,7 @@ class GL:
             x2, y2 = points[4], points[5]
 
             if dim == '3D':
-                if not transparency:
+                if transparency == False:
                     z0, z1, z2 = z_coord[0], z_coord[1], z_coord[2]
                 else:
                     z0, z1, z2 = z_NDC[0], z_NDC[1], z_NDC[2]
@@ -846,31 +897,34 @@ class GL:
             connectionPoints = [x0, y0, x1, y1, x2, y2, x0, y0]
 
             for i in range(0, 5, 2):
-                x0, y0 = round(connectionPoints[i]), round(connectionPoints[i+1])
-                x1, y1 = round(connectionPoints[i+2]), round(connectionPoints[i+3])
+                u0, v0 = int(connectionPoints[i]), int(connectionPoints[i+1])
+                u1, v1 = int(connectionPoints[i+2]), int(connectionPoints[i+3])
 
-                dx = abs(x1-x0) #delta x
-                dy = abs(y1-y0) #delta y
-                sx = 1 if x0 < x1 else -1 #identifica a direção da linha
-                sy = 1 if y0 < y1 else -1 #identifica a direção da linha
+                dx = abs(u1-u0) #delta x
+                dy = abs(v1-v0) #delta y
+                sx = 1 if u0 < u1 else -1 #identifica a direção da linha
+                sy = 1 if v0 < v1 else -1 #identifica a direção da linha
                 erro = dx - dy
                 
-                while True:
+                while u0 != u1 or v0 != v1:
                     # Desenha pixel (3D/2D)
                     if dim == '3D':
-                        GL.new_draw_pixel(x0, y0, passPoints, color, colors)
+                        #print('enter here 1st')
+                        GL.new_draw_pixel(u0, v0, passPoints, color, colors)
                     else:
                         # Anti aliasing (apenas para exemplo 2D)
-                        _ss = GL.antialiasing(x0, y0, passPoints)
-                        GL.new_draw_pixel(x0, y0, passPoints, color, colors, ss=_ss)                        
+                        ss = GL.antialiasing(u0, v0, passPoints)
+                        GL.new_draw_pixel(u0, v0, passPoints, color, colors,ss=ss)                        
 
-                    e2 = 2 * erro
-                    if e2 > -dy:
-                        erro -= dy
-                        x0 += sx
-                    if e2 < dx:
-                        erro += dx
-                        y0 += sy
+                    if u0>= 0 and v0>= 0 and u0<GL.width and v0<GL.height: #limitar linhas dentro do FrameBuffer 
+                        e2 = 2 * erro
+                        if e2 >= -dy:
+                            erro -= dy
+                            u0 += sx
+                        if e2 <= dx:
+                            erro += dx
+                            v0 += sy
+                            e2 = 2 * erro
 
             #pegando o max e min para delimitar uma bounding box
             max_x = max(x0,x1,x2)
@@ -878,14 +932,13 @@ class GL:
             min_x = min(x0,x1,x2)
             min_y = min(y0,y1,y2)
 
-            for i in range(min_x, max_x, 1):
-                for j in range(min_y, max_y, 1):
+
+            for i in range(int(min_x), int(max_x)):
+                for j in range(int(min_y), int(max_y)):
                     if GL.is_inside(i, j, passPoints):
                         if dim == '3D':
                             GL.new_draw_pixel(i, j, passPoints, color, colors)
                         else:
                             # Anti aliasing (apenas para exemplo 2D)
-                            _ss = GL.antialiasing(i, j, points)
-                            GL.new_draw_pixel(i, j, passPoints, color, colors, ss=_ss)
-
-
+                            ss = GL.antialiasing(i, j, passPoints)
+                            GL.new_draw_pixel(i, j, passPoints, color, colors,ss=ss)
