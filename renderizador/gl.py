@@ -142,9 +142,8 @@ class GL:
         #                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [R,G,B])  # altera pixel (u, v, tipo, r, g, b)
 
 
-
     @staticmethod
-    def triangleSet(point, colors):
+    def triangleSet(point, colors,is_texture = False, texture_coordinates=[]):
         """Função usada para renderizar TriangleSet."""
 
         GL.draw_triangle(point,colors, transparency = True)
@@ -360,8 +359,6 @@ class GL:
 
             GL.draw_triangle(vertices, colors)
 
-
-
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
         """Função usada para renderizar IndexedTriangleStripSet."""
@@ -401,68 +398,110 @@ class GL:
     @staticmethod
     def box(size, colors):
         """Função usada para renderizar Boxes."""
-        # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
-        # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
-        # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
-        # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
-        # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        #print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        #print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
+        v1 = size[0]/2, -size[1]/2, -size[2]/2
+        v2 = -size[0]/2, -size[1]/2, -size[2]/2
+        v3 = size[0]/2,  size[1]/2, -size[2]/2
+        v4 = -size[0]/2,  size[1]/2, -size[2]/2
+        v5 = size[0]/2, -size[1]/2,  size[2]/2
+        v6 = -size[0]/2, -size[1]/2,  size[2]/2
+        v7 = size[0]/2,  size[1]/2,  size[2]/2
+        v8 = -size[0]/2,  size[1]/2,  size[2]/2
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        #gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        vertices = v1 + v2 + v3 + \
+                   v3 + v2 + v4 + \
+                   v5 + v6 + v7 + \
+                   v7 + v6 + v8 + \
+                   v1 + v5 + v3 + \
+                   v3 + v5 + v7 + \
+                   v2 + v6 + v4 + \
+                   v4 + v6 + v8 + \
+                   v3 + v4 + v7 + \
+                   v7 + v4 + v8 + \
+                   v1 + v2 + v5 + \
+                   v5 + v2 + v6
+
+        GL.draw_triangle(vertices, colors)        
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
                        texCoord, texCoordIndex, colors, current_texture):
         """Função usada para renderizar IndexedFaceSet."""
 
+        triangle = []
+        triangle_colors = []
+        tex_coords = []
+        if current_texture:
+            textura = current_texture[0]
+            textura_img = gpu.GPU.load_texture(textura)
 
-        clockwise = False
-        i = 2
-        while i< len(coordIndex):
-            while coordIndex[i] != -1:
-                if not clockwise:
-                    points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
-                            coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2],
-                            coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2]] 
-                    if colorPerVertex and color is not None:
-                        v_color = np.asarray([[color[colorIndex[i-2]*3], color[colorIndex[i-1]*3], color[colorIndex[i]*3]],
-                                                [color[colorIndex[i-2]*3+1], color[colorIndex[i-1]*3+1], color[colorIndex[i]*3+1]],
-                                                [color[colorIndex[i-2]*3+2], color[colorIndex[i-1]*3+2], color[colorIndex[i]*3+2]]] )
+            
+            for index in coordIndex:
+                if index == -1:
+                    pass
                 else:
-                    points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
-                            coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
-                            coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2]]
-                    if colorPerVertex and color is not None:
-                        v_color = np.asarray([[color[colorIndex[i-2]*3], color[colorIndex[i]*3], color[colorIndex[i-1]*3]],
-                                                [color[colorIndex[i-2]*3+1], color[colorIndex[i]*3+1], color[colorIndex[i-1]*3+1]],
-                                                [color[colorIndex[i-2]*3+2], color[colorIndex[i]*3+2], color[colorIndex[i-1]*3+2]]])
+                    triangle+= coord[index*3:index*3+3]
                     
-                clockwise = not clockwise
-                if colorPerVertex and color is not None:
-                    GL.draw_triangle(points, colors, color=v_color)
+            for index in texCoordIndex:
+                if index == -1:
+                    pass
                 else:
-                    GL.draw_triangle(points, colors)
-                i += 1
-            i+=3
+                    tex_coords += texCoord[index*2:index*2+2]  
+                    
+                    
+            GL.triangleSet(triangle,textura_img, is_texture = True, texture_coordinates = tex_coords)
+
+        # clockwise = False
+        # i = 2
+        # while i< len(coordIndex):
+        #     while coordIndex[i] != -1:
+        #         if not clockwise:
+        #             points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+        #                     coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2],
+        #                     coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2]] 
+        #             if colorPerVertex and color is not None:
+        #                 v_color = np.asarray([[color[colorIndex[i-2]*3], color[colorIndex[i-1]*3], color[colorIndex[i]*3]],
+        #                                         [color[colorIndex[i-2]*3+1], color[colorIndex[i-1]*3+1], color[colorIndex[i]*3+1]],
+        #                                         [color[colorIndex[i-2]*3+2], color[colorIndex[i-1]*3+2], color[colorIndex[i]*3+2]]] )
+        #         else:
+        #             points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+        #                     coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
+        #                     coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2]]
+        #             if colorPerVertex and color is not None:
+        #                 v_color = np.asarray([[color[colorIndex[i-2]*3], color[colorIndex[i]*3], color[colorIndex[i-1]*3]],
+        #                                         [color[colorIndex[i-2]*3+1], color[colorIndex[i]*3+1], color[colorIndex[i-1]*3+1]],
+        #                                         [color[colorIndex[i-2]*3+2], color[colorIndex[i]*3+2], color[colorIndex[i-1]*3+2]]])
+                    
+        #         clockwise = not clockwise
+        #         if colorPerVertex and color is not None:
+        #             GL.draw_triangle(points, colors, color=v_color)
+        #         else:
+        #             GL.draw_triangle(points, colors)
+        #         i += 1
+        #     i+=3
 
 
     @staticmethod
     def sphere(radius, colors):
         """Função usada para renderizar Esferas."""
-        # A função sphere é usada para desenhar esferas na cena. O esfera é centrada no
-        # (0, 0, 0) no sistema de coordenadas local. O argumento radius especifica o
-        # raio da esfera que está sendo criada. Para desenha essa esfera você vai
-        # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
-        # os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
-        print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+        num_points = 20
+        theta_values = [math.pi * i / num_points for i in range(num_points)]
+        phi_values = [2 * math.pi * i / num_points for i in range(num_points)]
+
+        globe = [(radius * math.sin(theta) * math.cos(phi),
+                radius * math.sin(theta) * math.sin(phi),
+                radius * math.cos(theta))
+                for theta in theta_values
+                for phi in phi_values]
+
+        for i in range(len(globe)-num_points):
+            if (i+1) % num_points == 0:
+                continue
+            a, b, c = i, i+1, i+num_points
+            d, e, f = i+num_points+1, i+num_points, i+1
+            GL.draw_triangle([*globe[a], *globe[b], *globe[c]], colors)
+            GL.draw_triangle([*globe[d], *globe[e], *globe[f]], colors)
 
     @staticmethod
     def navigationInfo(headlight):
@@ -619,8 +658,8 @@ class GL:
         def line_eq(x, y, x0, y0, x1, y1):
             return (y1-y0)*x - (x1-x0)*y + y0*(x1-x0) - x0*(y1-y0)
 
-        alpha = line_eq(x, y, x1, y1, x2, y2)/line_eq(x0, y0, x1, y1, x2, y2)
-        beta = line_eq(x, y, x2, y2, x0, y0)/line_eq(x1, y1, x2, y2, x0, y0)
+        alpha = line_eq(x, y, x1, y1, x2, y2)/(line_eq(x0, y0, x1, y1, x2, y2)+0.00001)
+        beta = line_eq(x, y, x2, y2, x0, y0)/(line_eq(x1, y1, x2, y2, x0, y0)+0.00001)
         gamma = 1 - alpha - beta
 
         return alpha, beta, gamma
@@ -753,13 +792,19 @@ class GL:
 
     @staticmethod
     def draw_triangle(points, colors, color=None, transparency=False):
+        print('entrouuuu')
         points_len = len(points)
-        if points_len % 6 == 0:
-            dim = '2D'
-            num_coord = 6
+        if points_len % 24 == 0:
+            dim = '3D'
+            num_coord = 9
+        elif points_len % 6 == 0:
+            dim = '3D'
+            num_coord = 9
         elif points_len % 9 == 0:
             dim = '3D'
             num_coord = 9
+
+        print(dim)
 
         # Pega o total de triângulos e os separa em uma matriz de triângulos
         total_triangles = int(points_len/num_coord)
@@ -770,6 +815,7 @@ class GL:
             vertices = triangles[i]
             
             if dim == '3D':
+                print('3ddddd')
                 for i in range(0,len(vertices),9): 
                     x0 = int(vertices[i])
                     y0 = int(vertices[i+1])
@@ -829,6 +875,7 @@ class GL:
             x2, y2 = points[4], points[5]
 
             if dim == '3D':
+            
                 if transparency == False:
                     z0, z1, z2 = z_coord[0], z_coord[1], z_coord[2]
                 else:
