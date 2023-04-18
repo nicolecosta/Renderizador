@@ -146,6 +146,7 @@ class GL:
     def triangleSet(point, colors,is_texture = False, texture_coordinates=[]):
         """Função usada para renderizar TriangleSet."""
 
+
         GL.draw_triangle(point,colors, transparency = True)
 
         # #separando e nomeando os pontos
@@ -428,28 +429,43 @@ class GL:
                        texCoord, texCoordIndex, colors, current_texture):
         """Função usada para renderizar IndexedFaceSet."""
 
-        triangle = []
-        triangle_colors = []
-        tex_coords = []
-        if current_texture:
-            textura = current_texture[0]
-            textura_img = gpu.GPU.load_texture(textura)
+        clockwise = False
+        i = 2
+        while i < len(coordIndex):
+            while coordIndex[i] != -1:
+                if not clockwise:
+                    points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+                            coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2],
+                            coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2]]
+                    if texCoord is not None:
+                        tex_coords = [texCoord[texCoordIndex[i-2]*2], texCoord[texCoordIndex[i-2]*2+1],
+                                    texCoord[texCoordIndex[i-1]*2], texCoord[texCoordIndex[i-1]*2+1],
+                                    texCoord[texCoordIndex[i]*2], texCoord[texCoordIndex[i]*2+1]]
+                else:
+                    points = [coord[coordIndex[i-2]*3], coord[coordIndex[i-2]*3+1], coord[coordIndex[i-2]*3+2],
+                            coord[coordIndex[i]*3], coord[coordIndex[i]*3+1], coord[coordIndex[i]*3+2],
+                            coord[coordIndex[i-1]*3], coord[coordIndex[i-1]*3+1], coord[coordIndex[i-1]*3+2]]
+                    if texCoord is not None:
+                        tex_coords = [texCoord[texCoordIndex[i-2]*2], texCoord[texCoordIndex[i-2]*2+1],
+                                    texCoord[texCoordIndex[i]*2], texCoord[texCoordIndex[i]*2+1],
+                                    texCoord[texCoordIndex[i-1]*2], texCoord[texCoordIndex[i-1]*2+1]]
 
-            
-            for index in coordIndex:
-                if index == -1:
-                    pass
+                clockwise = not clockwise
+
+                if texCoord is not None:
+                    GL.image_texture = gpu.GPU.load_texture(current_texture[0])
+                    GL.draw_triangle(points, colors, texture=tex_coords)
+
+                elif colorPerVertex and color is not None:
+                    v_color = np.asarray([[color[colorIndex[i-2]*3], color[colorIndex[i-1]*3], color[colorIndex[i]*3]],
+                                        [color[colorIndex[i-2]*3+1], color[colorIndex[i-1]*3+1], color[colorIndex[i]*3+1]],
+                                        [color[colorIndex[i-2]*3+2], color[colorIndex[i-1]*3+2], color[colorIndex[i]*3+2]]])
+                    GL.draw_triangle(points, colors, color=v_color)
                 else:
-                    triangle+= coord[index*3:index*3+3]
-                    
-            for index in texCoordIndex:
-                if index == -1:
-                    pass
-                else:
-                    tex_coords += texCoord[index*2:index*2+2]  
-                    
-                    
-            GL.triangleSet(triangle,textura_img, is_texture = True, texture_coordinates = tex_coords)
+                    GL.draw_triangle(points, colors)
+
+                i += 1
+            i += 3
 
         # clockwise = False
         # i = 2
@@ -721,7 +737,7 @@ class GL:
         return ss
 
     @staticmethod
-    def new_draw_pixel(x,y,points,color,colors,ss=1):
+    def new_draw_pixel(x,y,points,color,colors,ss=1,texture3d=None):
         frame = (0 < x < GL.width) and (0 < y < GL.height)
         #print(color)
         points_len = len(points)
@@ -779,20 +795,33 @@ class GL:
                 Z = 1/(u/points[2] + v/points[5] + w/points[8])
                 if(Z < gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)):
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
-
-                    R = colors['emissiveColor'][0]*(1-colors['transparency'])*255.0
-                    G = colors['emissiveColor'][1]*(1-colors['transparency'])*255.0
-                    B = colors['emissiveColor'][2]*(1-colors['transparency'])*255.0
-                    new_color = [R, G, B]
-
-                    R, G, B = og_color + new_color
                     
-                    gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8, [R,G,B])
+                    if texture3d is None:
+                        R = colors['emissiveColor'][0]*(1-colors['transparency'])*255.0
+                        G = colors['emissiveColor'][1]*(1-colors['transparency'])*255.0
+                        B = colors['emissiveColor'][2]*(1-colors['transparency'])*255.0
+                        new_color = [R, G, B]
 
+                        R, G, B = og_color + new_color
+                        
+                        gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8, [R,G,B])
+                    
+                    else:
+                        u_text = (u*texture3d[0] + v*texture3d[2] + w*texture3d[4])*(len(GL.image_texture)-1)
+                        v_text = (u*texture3d[1] + v*texture3d[3] + w*texture3d[5])*(len(GL.image_texture)-1)
+
+
+                        u_text = max(min(u_text, 255.0), 0.0)
+                        v_text = max(min(v_text, 255.0), 0.0)
+
+                        R = GL.image_texture[int(v_text)][int(u_text)][0]
+                        G = GL.image_texture[int(v_text)][int(u_text)][1]
+                        B = GL.image_texture[int(v_text)][int(u_text)][2]
+
+                        gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8, [R,G,B])
 
     @staticmethod
-    def draw_triangle(points, colors, color=None, transparency=False):
-        print('entrouuuu')
+    def draw_triangle(points, colors, color=None, transparency=False, texture=None):
         points_len = len(points)
         if points_len % 24 == 0:
             dim = '3D'
@@ -804,7 +833,7 @@ class GL:
             dim = '3D'
             num_coord = 9
 
-        print(dim)
+        #print(dim)
 
         # Pega o total de triângulos e os separa em uma matriz de triângulos
         total_triangles = int(points_len/num_coord)
@@ -815,7 +844,6 @@ class GL:
             vertices = triangles[i]
             
             if dim == '3D':
-                print('3ddddd')
                 for i in range(0,len(vertices),9): 
                     x0 = int(vertices[i])
                     y0 = int(vertices[i+1])
@@ -900,7 +928,12 @@ class GL:
                 
                 while u0 != u1 or v0 != v1:
                     if dim == '3D':
-                        GL.new_draw_pixel(u0, v0, passPoints, color, colors)
+                        if texture is None:
+                            GL.new_draw_pixel(u0, v0, passPoints, color, colors)
+                        else:
+                            GL.new_draw_pixel(u0, v0, passPoints, color, colors,texture3d = texture)
+
+
                     else:
                         ss = GL.antialiasing(u0, v0, passPoints)
                         GL.new_draw_pixel(u0, v0, passPoints, color, colors,ss=ss)                        
@@ -926,7 +959,10 @@ class GL:
                 for j in range(int(min_y), int(max_y)):
                     if GL.is_inside(i, j, passPoints):
                         if dim == '3D':
-                            GL.new_draw_pixel(i, j, passPoints, color, colors)
+                            if texture is None:
+                                GL.new_draw_pixel(i, j, passPoints, color, colors)
+                            else:
+                                GL.new_draw_pixel(i, j, passPoints, color, colors,texture3d = texture)
                         else:
                             ss = GL.antialiasing(i, j, passPoints)
                             GL.new_draw_pixel(i, j, passPoints, color, colors,ss=ss)
